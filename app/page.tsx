@@ -1,3 +1,4 @@
+import { Header } from "./components/Header";
 import { TrackOrderCard } from "./components/TrackOrderCard";
 import { RequestReturnCard } from "./components/RequestReturnCard";
 import { RefundTracker } from "./components/RefundTracker";
@@ -32,22 +33,8 @@ const PLACEHOLDER_RETURNS: ReturnEntry[] = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">NorthStar</h1>
-              <p className="text-sm text-gray-600">Order &amp; Return Management</p>
-            </div>
-            <nav className="hidden md:flex gap-6">
-              <a href="#" className="text-gray-700 hover:text-gray-900 font-medium">Help</a>
-              <a href="#" className="text-gray-700 hover:text-gray-900 font-medium">Account</a>
-              <a href="#" className="text-gray-700 hover:text-gray-900 font-medium">Settings</a>
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* Interactive Header with Help, Account, Settings Modals */}
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
