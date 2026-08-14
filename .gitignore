@@ -9,7 +9,7 @@ out/
 .env
 .env.local
 .env.*.local
-.env.example
+
 # databases
 *.db
 
