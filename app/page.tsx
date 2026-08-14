@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import { Header } from "./components/Header";
 import { TrackOrderCard } from "./components/TrackOrderCard";
 import { RequestReturnCard } from "./components/RequestReturnCard";
@@ -5,32 +8,28 @@ import { RefundTracker } from "./components/RefundTracker";
 import { ReturnsTable } from "./components/ReturnsTable";
 import type { ReturnEntry } from "@/types";
 
-// Placeholder data — replace with a real API call when the returns
-// backend is built. Kept here so the dashboard isn't empty.
-const PLACEHOLDER_RETURNS: ReturnEntry[] = [
-  {
-    id: "RET-001",
-    orderId: "NS-90002",
-    productName: "USB Cable",
-    status: "Refunded",
-    amount: "₦3,999",
-    requestedDate: "2024-08-01",
-    refundedDate: "2024-08-10",
-    reason: "Changed my mind",
-  },
-  {
-    id: "RET-002",
-    orderId: "NS-90003",
-    productName: "Phone Stand",
-    status: "In Transit",
-    amount: "₦2,499",
-    requestedDate: "2024-08-05",
-    refundedDate: null,
-    reason: "Damaged",
-  },
-];
-
 export default function Home() {
+  const [returns, setReturns] = useState<ReturnEntry[]>([]);
+  const [loadingReturns, setLoadingReturns] = useState(true);
+
+  const fetchReturns = useCallback(async () => {
+    try {
+      const res = await fetch("/api/returns");
+      if (res.ok) {
+        const data = await res.json();
+        setReturns(data.returns || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch returns history:", err);
+    } finally {
+      setLoadingReturns(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReturns();
+  }, [fetchReturns]);
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Interactive Header with Help, Account, Settings Modals */}
@@ -40,19 +39,30 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Refund Tracker Cards */}
         <div className="mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Refund Overview</h2>
-          <RefundTracker returns={PLACEHOLDER_RETURNS} />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Refund Overview</h2>
+            <span className="text-xs text-gray-500 font-medium">
+              Data source: Untracked local SQLite DB (`local.db`)
+            </span>
+          </div>
+          <RefundTracker returns={returns} />
         </div>
 
         {/* Order & Return Forms */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <TrackOrderCard />
-          <RequestReturnCard />
+          <RequestReturnCard onReturnSubmitted={fetchReturns} />
         </div>
 
         {/* Returns History Table */}
         <div className="mb-8">
-          <ReturnsTable returns={PLACEHOLDER_RETURNS} />
+          {loadingReturns ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center text-sm text-gray-500">
+              Loading mock returns history...
+            </div>
+          ) : (
+            <ReturnsTable returns={returns} />
+          )}
         </div>
       </main>
     </div>

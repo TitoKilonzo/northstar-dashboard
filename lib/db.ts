@@ -51,6 +51,22 @@ export async function ensureSchema(): Promise<void> {
         FOREIGN KEY (order_id) REFERENCES orders(order_id)
       );
     `);
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS returns (
+        return_id TEXT PRIMARY KEY,
+        order_id TEXT NOT NULL,
+        item_id TEXT NOT NULL,
+        product_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        requested_at TEXT NOT NULL,
+        refunded_at TEXT,
+        reason TEXT NOT NULL,
+        condition TEXT NOT NULL,
+        FOREIGN KEY (order_id) REFERENCES orders(order_id),
+        FOREIGN KEY (item_id) REFERENCES order_items(item_id)
+      );
+    `);
     _schemaReady = true;
   } catch (err) {
     console.error("[db] Failed to ensure schema:", err);

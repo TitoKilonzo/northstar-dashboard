@@ -127,6 +127,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
     }
 
+    // Record approved return into untracked local.db returns table
+    const returnId = `RET-${Math.floor(1000 + Math.random() * 9000)}`;
+    const now = new Date().toISOString();
+    try {
+      await db.execute({
+        sql: `INSERT INTO returns (return_id, order_id, item_id, product_name, status, amount, requested_at, refunded_at, reason, condition)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          returnId,
+          String(order.order_id),
+          String(item.item_id),
+          String(item.product_name),
+          "Approved",
+          "₦15,000",
+          now,
+          null,
+          reason,
+          condition,
+        ],
+      });
+    } catch (insertErr) {
+      console.error("[return-eligibility] Failed to log return entry:", insertErr);
+    }
+
     return NextResponse.json({
       eligible: true,
       reason: `Delivered ${daysSinceDelivery} day(s) ago, within the ${RETURN_WINDOW_DAYS}-day window, and in acceptable condition. Return approved.`,

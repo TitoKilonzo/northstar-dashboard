@@ -8,14 +8,14 @@ const db = createClient({
 const STAGES = ["Processing", "Shipped", "In Transit", "Delivered"];
 const NAMES = ["A. Njoroge", "B. Wanjiru", "C. Otieno", "D. Mwangi", "E. Achieng", "F. Kiptoo"];
 const CATALOG = [
-  { name: "Wireless Earbuds", finalSale: false },
-  { name: "Trail Runner Sneaker", finalSale: false },
-  { name: "Cast Iron Skillet 10in", finalSale: false },
-  { name: "Clearance Desk Lamp", finalSale: true },
-  { name: "Canvas Tote Bag", finalSale: false },
-  { name: "Noise-Cancelling Headset", finalSale: false },
-  { name: "Discounted Yoga Mat", finalSale: true },
-  { name: "Insulated Water Bottle", finalSale: false },
+  { name: "Wireless Earbuds", finalSale: false, price: "₦15,999" },
+  { name: "Trail Runner Sneaker", finalSale: false, price: "₦28,500" },
+  { name: "Cast Iron Skillet 10in", finalSale: false, price: "₦12,000" },
+  { name: "Clearance Desk Lamp", finalSale: true, price: "₦4,500" },
+  { name: "Canvas Tote Bag", finalSale: false, price: "₦3,999" },
+  { name: "Noise-Cancelling Headset", finalSale: false, price: "₦42,000" },
+  { name: "Discounted Yoga Mat", finalSale: true, price: "₦6,000" },
+  { name: "Insulated Water Bottle", finalSale: false, price: "₦2,499" },
 ];
 
 function daysAgo(n) {
@@ -44,6 +44,24 @@ async function main() {
       FOREIGN KEY (order_id) REFERENCES orders(order_id)
     );
   `);
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS returns (
+      return_id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      product_name TEXT NOT NULL,
+      status TEXT NOT NULL,
+      amount TEXT NOT NULL,
+      requested_at TEXT NOT NULL,
+      refunded_at TEXT,
+      reason TEXT NOT NULL,
+      condition TEXT NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(order_id),
+      FOREIGN KEY (item_id) REFERENCES order_items(item_id)
+    );
+  `);
+
+  await db.execute(`DELETE FROM returns;`);
   await db.execute(`DELETE FROM order_items;`);
   await db.execute(`DELETE FROM orders;`);
 
@@ -85,6 +103,65 @@ async function main() {
     { name: "Discounted Yoga Mat", finalSale: true },
   ]); // right at the edge of the window, but also final sale
 
+  // Seed mock returns history into local.db
+  const MOCK_RETURNS_SEED = [
+    {
+      return_id: "RET-001",
+      order_id: "NS-90001",
+      item_id: "NS-90001-ITEM1",
+      product_name: "Wireless Earbuds",
+      status: "Refunded",
+      amount: "₦15,999",
+      requested_at: daysAgo(8),
+      refunded_at: daysAgo(3),
+      reason: "Changed my mind",
+      condition: "New, unused, original packaging",
+    },
+    {
+      return_id: "RET-002",
+      order_id: "NS-90005",
+      item_id: "NS-90005-ITEM2",
+      product_name: "Canvas Tote Bag",
+      status: "In Transit",
+      amount: "₦3,999",
+      requested_at: daysAgo(2),
+      refunded_at: null,
+      reason: "Wrong item received",
+      condition: "Opened but unused",
+    },
+    {
+      return_id: "RET-003",
+      order_id: "NS-90002",
+      item_id: "NS-90002-ITEM1",
+      product_name: "Trail Runner Sneaker",
+      status: "Approved",
+      amount: "₦28,500",
+      requested_at: daysAgo(5),
+      refunded_at: null,
+      reason: "Item doesn't fit",
+      condition: "New, unused, original packaging",
+    },
+  ];
+
+  for (const r of MOCK_RETURNS_SEED) {
+    await db.execute({
+      sql: `INSERT INTO returns (return_id, order_id, item_id, product_name, status, amount, requested_at, refunded_at, reason, condition)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        r.return_id,
+        r.order_id,
+        r.item_id,
+        r.product_name,
+        r.status,
+        r.amount,
+        r.requested_at,
+        r.refunded_at,
+        r.reason,
+        r.condition,
+      ],
+    });
+  }
+
   // bulk it out with randomised orders so it doesn't feel like 7 rows in a demo
   let count = 7;
   for (let i = 1; i <= 45; i++) {
@@ -92,7 +169,6 @@ async function main() {
     const status = STAGES[Math.floor(Math.random() * STAGES.length)];
     const placedDaysAgo = Math.floor(Math.random() * 50) + 1;
     const placed = daysAgo(placedDaysAgo);
-    // Ensure delivered_at is always AFTER placed_at
     let delivered = null;
     if (status === "Delivered") {
       const maxDeliveryDaysAgo = Math.max(0, placedDaysAgo - 1);
@@ -103,7 +179,7 @@ async function main() {
     count++;
   }
 
-  console.log(`Seeded ${count} orders (7 hand-picked QA cases + ${count - 7} random) into local.db`);
+  console.log(`Seeded ${count} orders & ${MOCK_RETURNS_SEED.length} mock returns into untracked local.db`);
 }
 
 main().catch((err) => {

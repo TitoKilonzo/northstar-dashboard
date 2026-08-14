@@ -10,8 +10,15 @@ out/
 .env.local
 .env.*.local
 
-# databases
+# local mock data and databases (untracked)
+local.db
 *.db
+*.db-journal
+*.sqlite
+*.sqlite3
+.data/
+mock-data/
+*.local.json
 
 # misc
 .DS_Store

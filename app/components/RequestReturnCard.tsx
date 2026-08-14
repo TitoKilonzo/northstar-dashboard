@@ -19,7 +19,11 @@ const CONDITION_OPTIONS = [
   "Damaged",
 ];
 
-export function RequestReturnCard() {
+interface RequestReturnCardProps {
+  onReturnSubmitted?: () => void;
+}
+
+export function RequestReturnCard({ onReturnSubmitted }: RequestReturnCardProps) {
   const [orderId, setOrderId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +74,9 @@ export function RequestReturnCard() {
       });
       const data: ReturnVerdict = await res.json();
       setVerdict(data);
+      if (data.eligible) {
+        onReturnSubmitted?.();
+      }
     } catch {
       setVerdict({
         eligible: false,
