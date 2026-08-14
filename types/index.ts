@@ -32,4 +32,5 @@ export interface ReturnEntry {
   requestedDate: string;
   refundedDate: string | null;
   reason: string;
+  condition: string;
 }

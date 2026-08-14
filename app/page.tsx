@@ -32,19 +32,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Interactive Header with Help, Account, Settings Modals */}
+      {/* Header with Help, Account, Settings Modals */}
       <Header />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Refund Tracker Cards */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Refund Overview</h2>
-            <span className="text-xs text-gray-500 font-medium">
-              Data source: Untracked local SQLite DB (`local.db`)
-            </span>
-          </div>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Refund Overview</h2>
           <RefundTracker returns={returns} />
         </div>
 
@@ -58,10 +53,10 @@ export default function Home() {
         <div className="mb-8">
           {loadingReturns ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center text-sm text-gray-500">
-              Loading mock returns history...
+              Loading returns data...
             </div>
           ) : (
-            <ReturnsTable returns={returns} />
+            <ReturnsTable returns={returns} onRefundProcessed={fetchReturns} />
           )}
         </div>
       </main>

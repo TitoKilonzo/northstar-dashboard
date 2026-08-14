@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     await ensureSchema();
 
     const result = await db.execute(`
-      SELECT return_id, order_id, item_id, product_name, status, amount, requested_at, refunded_at, reason
+      SELECT return_id, order_id, item_id, product_name, status, amount, requested_at, refunded_at, reason, condition
       FROM returns
       ORDER BY requested_at DESC
     `);
@@ -23,6 +23,7 @@ export async function GET(): Promise<NextResponse> {
       requestedDate: String(row.requested_at),
       refundedDate: row.refunded_at ? String(row.refunded_at) : null,
       reason: String(row.reason),
+      condition: row.condition ? String(row.condition) : "New, unused, original packaging",
     }));
 
     return NextResponse.json({ returns });
