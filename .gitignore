@@ -1,3 +1,19 @@
+# dependencies
+node_modules/
+
+# build
+.next/
+out/
+
+# env files (never commit secrets)
+.env
 .env.local
-node_modules
-local.db
+.env.*.local
+.env.examples
+# databases
+*.db
+
+# misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts

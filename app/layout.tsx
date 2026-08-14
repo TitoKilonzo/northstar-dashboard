@@ -19,8 +19,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Northstar Support Desk",
-  description: "Check an order's status or return eligibility — no ticket needed.",
+  title: "NorthStar - Order & Return Management",
+  description: "Track your orders and manage returns with ease. Professional order fulfillment and refund tracking.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

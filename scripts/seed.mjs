@@ -61,7 +61,7 @@ async function main() {
     }
   }
 
-  // hand-picked cases for QA - covers each rule on its own
+  // hand-picked cases for QA — covers each rule on its own
   await insertOrder("NS-90001", "A. Njoroge", "Delivered", daysAgo(20), daysAgo(10), [
     { name: "Wireless Earbuds", finalSale: false },
   ]); // straightforward eligible case
@@ -90,8 +90,14 @@ async function main() {
   for (let i = 1; i <= 45; i++) {
     const id = "NS-" + String(10000 + i);
     const status = STAGES[Math.floor(Math.random() * STAGES.length)];
-    const placed = daysAgo(Math.floor(Math.random() * 50) + 1);
-    const delivered = status === "Delivered" ? daysAgo(Math.floor(Math.random() * 50)) : null;
+    const placedDaysAgo = Math.floor(Math.random() * 50) + 1;
+    const placed = daysAgo(placedDaysAgo);
+    // Ensure delivered_at is always AFTER placed_at
+    let delivered = null;
+    if (status === "Delivered") {
+      const maxDeliveryDaysAgo = Math.max(0, placedDaysAgo - 1);
+      delivered = daysAgo(Math.floor(Math.random() * (maxDeliveryDaysAgo + 1)));
+    }
     const item = CATALOG[Math.floor(Math.random() * CATALOG.length)];
     await insertOrder(id, NAMES[i % NAMES.length], status, placed, delivered, [item]);
     count++;
