@@ -26,12 +26,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Malformed request body." }, { status: 400 });
     }
 
-    const order_id = typeof body.order_id === "string" ? body.order_id.trim() : "";
+    const raw_order_id = typeof body.order_id === "string" ? body.order_id.trim() : "";
     const item_id = typeof body.item_id === "string" ? body.item_id.trim() : "";
     const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     const condition = typeof body.condition === "string" ? body.condition.trim() : "";
 
-    if (!order_id || !item_id) {
+    if (!raw_order_id || !item_id) {
       return NextResponse.json(
         { error: "Pick an order and an item first." },
         { status: 400 }
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     if (
-      order_id.length > MAX_FIELD_LENGTH ||
+      raw_order_id.length > MAX_FIELD_LENGTH ||
       item_id.length > MAX_FIELD_LENGTH ||
       reason.length > MAX_FIELD_LENGTH ||
       condition.length > MAX_FIELD_LENGTH
@@ -50,20 +50,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Format variations: e.g. "ns-90001" -> "NS-90001", "90001" -> "NS-90001", "NS90001" -> "NS-90001"
+    const uppercaseId = raw_order_id.toUpperCase();
+    let formattedId = uppercaseId;
+
+    if (!uppercaseId.startsWith("NS-") && uppercaseId.startsWith("NS")) {
+      formattedId = "NS-" + uppercaseId.slice(2);
+    } else if (!uppercaseId.startsWith("NS-") && /^\d+$/.test(uppercaseId)) {
+      formattedId = "NS-" + uppercaseId;
+    }
+
     const orderResult = await db.execute({
-      sql: `SELECT order_id, status, delivered_at FROM orders WHERE order_id = ?`,
-      args: [order_id],
+      sql: `SELECT order_id, status, delivered_at FROM orders 
+            WHERE UPPER(order_id) = ? OR UPPER(order_id) = ? OR order_id = ?`,
+      args: [uppercaseId, formattedId, raw_order_id],
     });
+
     if (orderResult.rows.length === 0) {
       return NextResponse.json(
-        { error: "No order found matching that order number." },
+        { error: `We couldn't find an order matching "${raw_order_id}".` },
         { status: 404 }
       );
     }
 
+    const order = orderResult.rows[0];
+    const order_id = String(order.order_id);
+
     const itemResult = await db.execute({
-      sql: `SELECT item_id, product_name, final_sale FROM order_items WHERE item_id = ? AND order_id = ?`,
-      args: [item_id, order_id],
+      sql: `SELECT item_id, product_name, final_sale FROM order_items WHERE (item_id = ? OR UPPER(item_id) = ?) AND order_id = ?`,
+      args: [item_id, item_id.toUpperCase(), order_id],
     });
     if (itemResult.rows.length === 0) {
       return NextResponse.json(
@@ -72,7 +87,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const order = orderResult.rows[0];
     const item = itemResult.rows[0];
 
     // rule 1 — reason has to actually be filled in
@@ -111,7 +125,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // rule 3 — final sale items can't come back (explicit comparison, not truthy)
+    // rule 3 — final sale items can't come back (explicit comparison)
     if (Number(item.final_sale) === 1) {
       return NextResponse.json({
         eligible: false,
@@ -136,7 +150,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           returnId,
-          String(order.order_id),
+          order_id,
           String(item.item_id),
           String(item.product_name),
           "Approved",
